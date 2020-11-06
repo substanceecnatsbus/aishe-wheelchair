@@ -1,5 +1,5 @@
-from ecg import process_ecg
-from gsr import process_gsr
+from .ecg import process_ecg
+from .gsr import process_gsr
 import numpy as np
 import sys
 
@@ -21,6 +21,7 @@ class Signal:
 
             if lag >= self.lag_threshold:
                 # start over using the new time point
+                print("too much lag between signals")
                 self.clear_points()
         
         # add the new point

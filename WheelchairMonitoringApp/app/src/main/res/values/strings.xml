@@ -9,6 +9,8 @@
 
     <string name="ecg_tab">ECG</string>
     <string name="gsr_tab">GSR</string>
+    <string name="pm_tab">PM</string>
+    <string name="wm_tab">WM</string>
 
     <string name="discomfort_level_0">No Discomfort</string>
     <string name="discomfort_level_1">Mild Discomfort</string>

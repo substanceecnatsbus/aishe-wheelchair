@@ -1,20 +1,24 @@
-# Server (Node.js)
-
-### Install Packages (using yarn)
-
+# installation
+## server
 ```
-cd server
-yarn install
+pip install -r requirements.txt
 ```
 
-### Run development mode
+# running
+## server
+```
+$ python server --log_set [comma separated log_set enum] --record [True|False] --mode [inference|data gathering]
+```
+### log_set enum
+- ecg
+- gsr
+- pm
+- wm
+- features
+- inference
+- discomfort-level
 
-```
-yarn run dev
-```
 
-# Wheel Chair Monitoring App (Android App)
-
-```
-Use Android Studio
-```
+# TODO
+- [ ] moving average for GSR
+- [ ] normalization

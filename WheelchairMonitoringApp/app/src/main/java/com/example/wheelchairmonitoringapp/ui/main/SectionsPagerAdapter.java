@@ -14,7 +14,7 @@ import com.github.nkzawa.socketio.client.Socket;
 public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
     @StringRes
-    private static final int[] TAB_TITLES = new int[]{R.string.ecg_tab, R.string.gsr_tab};
+    private static final int[] TAB_TITLES = new int[]{R.string.ecg_tab, R.string.gsr_tab, R.string.pm_tab, R.string.wm_tab};
     private final Context mContext;
     private Socket socket;
 
@@ -27,8 +27,10 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
-        String tab_title = mContext.getString(TAB_TITLES[position]).toLowerCase();
-        return new Graph_Fragment(tab_title, this.socket);
+        String tab_title = this.mContext.getString(TAB_TITLES[position]).toLowerCase();
+        if (position == 0 || position == 1)
+            return new Graph_Fragment(tab_title, this.socket);
+        return new Matrix_Fragment(tab_title, this.socket, this.mContext);
     }
 
     @Nullable

@@ -1,15 +1,30 @@
+from absl import app
+from absl import flags
 import socketio
 import eventlet
 import time, sys
+from utils.logger import Logger
+from signal_processing.wheelchair_signals_monitor import Wheelchair_Signals_Monitor
 
 # CONSTANTS
-GSR_CONSTANT = 10000 # 10000 according to seedstudio
+GSR_CONSTANT = 10000 # used in computing the skin conductance (10000 according to seedstudio)
 EPSILON = 1e-22 # used to prevent numerical divide by zero errors
+SIGNAL_SET = {"ecg", "gsr", "pm", "wm"}
 
+# abseil flags
+FLAGS = flags.FLAGS
+flags.DEFINE_list("log_set", "", "set of tags to log")
+flags.DEFINE_boolean("record", False, "record samples")
+flags.DEFINE_enum("mode", "inference", "[inference, data_gathering]",
+                  "inference: predict using model, "
+                  "data_gathering: save data to database")
+
+# server initializations
 sio = socketio.Server(cors_allowed_origins="*")
-app = socketio.WSGIApp(sio)
-should_record = False
-should_log = False
+server = socketio.WSGIApp(sio)
+logger = Logger()
+signal_monitor = Wheelchair_Signals_Monitor()
+current_features = None
 
 # @sio.on("connect")
 # def on_connect(sid, environ):
@@ -17,32 +32,70 @@ should_log = False
 #     sio.emit("request-discomfort-level", "")
 #     sio.emit("receive-inference", "69:69pm,Severe")
 
-# @sio.on("discomfort-level")
-# def recieve_discomfort_level(sid, data):
-#     print(data)
+@sio.on("signal-nodemcu")
+def receive_signal(sid, data):
+    # parse data
+    data = data.split(":")
 
-@sio.on("ecg")
-def receive_ecg(sid, ecg):
-    ecg = float(ecg)
-    handle_data("ecg", ecg)
+    # assert data integrity
+    if len(data) != 2:
+        return
+    if not all(list(map(len, data))):
+        return
+    signal_type, signal = data
 
-@sio.on("gsr")
-def receive_gsr(sid, gsr):
-    gsr = float(gsr)
-    gsr = get_skin_conductance(gsr)
-    handle_data("gsr", gsr)
+    # discard signals not in SIGNAL_SET
+    if signal_type not in SIGNAL_SET:
+        return
 
-def handle_data(data_type, data):
+    # handle signal
+    if signal_type == "pm" or signal_type == "wm":
+        signal = list(map(int, signal.split(",")))
+        if signal[2] < 0: signal[2] = 0
+        # assert data integrity
+        if len(signal) != 3:
+            return
+    else:
+        signal = float(signal)
+        if signal_type == "gsr":
+            signal = get_skin_conductance(signal)
+
+    handle_data(signal_type, signal)
+
+def handle_data(signal_type, signal):
     current_time = get_time()
 
     # logging
-    if should_record:
-        record_values(current_time, data, f"./{data_type}.samples")
-    if should_log:
-        print(f"{data_type}:{current_time},{data}")
+    if FLAGS.record:
+        record_values(current_time, signal, f"./{signal_type}.samples")
+    logger.log(signal_type, f"{signal_type}:{current_time},{signal}")
+        
+    # send signal to mobile
+    sio.emit(f"mobile-{signal_type}-signal", f"{get_time()},{signal}")
 
-    # send data to mobile
-    sio.emit(f"mobile-{data_type}-signal", f"{get_time()},{data}")
+    # send the signal to the signal monitor
+    features = signal_monitor.add_point(signal_type=signal_type, t=current_time, y=signal)
+    if features != None:
+        logger.log("features", features)
+        if FLAGS.mode == "inference":
+            # # use model to predict
+            # prediction = model.predict(features)
+            # logger.log("inference", prediction)
+            # # send prediction to server
+            # sio.emit("receive-inference", f"{current_time},{prediction}")
+            pass
+        elif FLAGS.mode == "data_gathering":
+            current_features = features
+            # request discomfort level from the mobile app
+            sio.emit("request-discomfort-level", "")
+
+
+@sio.on("discomfort-level")
+def recieve_discomfort_level(sid, data):
+    discomfort_level = data
+    logger.log("discomfort-level", data)
+    # save current_feaures and discomfort_level to database
+    
 
 def get_skin_conductance(gsr_value):
     # equation from https://wiki.seeedstudio.com/Grove-GSR_Sensor/
@@ -65,11 +118,9 @@ def record_values(t, y, path_to_samples):
     with open(path_to_samples, "a") as fout:
         fout.write(f"{t},{y}\n")
 
+def main(argv):
+    logger.log_set = set(FLAGS.log_set)
+    eventlet.wsgi.server(eventlet.listen(('', 3000)), server)
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        for param in sys.argv[1:]:
-            if param.lower() == "log":
-                should_log = True
-            elif param.lower() == "record":
-                should_record = True
-    eventlet.wsgi.server(eventlet.listen(('', 3000)), app)
+    app.run(main)

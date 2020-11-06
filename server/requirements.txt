@@ -1,0 +1,9 @@
+numpy
+matplotlib
+scipy
+pandas
+absl-py
+python-socketio
+eventlet
+numpyencoder
+heartpy

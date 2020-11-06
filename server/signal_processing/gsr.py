@@ -18,12 +18,6 @@ def process_gsr(t_points, y_points, should_plot=False):
     y = noise_filter(y_points)
     standard_deviation = np.std(y)
     
-    # zero mean and normalize
-    y = (y - np.mean(y)) / standard_deviation
-
-    # # find peaks
-    # peaks, _ = find_peaks(y, prominence=0.04)
-
     if should_plot:
         fig, ax = plt.subplots()
         ax.plot(y)
