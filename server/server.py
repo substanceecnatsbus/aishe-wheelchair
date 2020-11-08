@@ -5,6 +5,14 @@ import eventlet
 import time, sys
 from utils.logger import Logger
 from signal_processing.wheelchair_signals_monitor import Wheelchair_Signals_Monitor
+from db.DbContext import DbContext
+from bson.objectid import ObjectId
+from models.ECG import ECG
+from models.GSR import GSR
+from models.MatrixItem import MatrixItem
+from models.Record import Record
+from utils.matrix import Matrix
+from datetime import datetime
 
 # CONSTANTS
 GSR_CONSTANT = 10000 # used in computing the skin conductance (10000 according to seedstudio)
@@ -120,5 +128,61 @@ def main(argv):
     logger.log_set = set(FLAGS.log_set)
     eventlet.wsgi.server(eventlet.listen(('', 3000)), server)
 
+
+def vardump(obj, title=None):
+  if title: print(f"==> {title}\n----------")
+  print(vars(obj))
+  print()
+
 if __name__ == "__main__":
-    app.run(main)
+    # app.run(main)
+    context = DbContext()
+
+    # 1) Creating ECG Model
+    ecg = ECG(mean_rri=1, cvrr=2, sdrr=3, sdsd=4, lf=5, hf=6, ratio=7, heart_rate=8)
+    vardump(ecg, "ECG")
+
+    # 2) Creating GSR Model
+    gsr = GSR(mini=1, maxi=2, mean=3, median=4, std=5, variance=6)
+    vardump(gsr, "GSR")
+
+    # 3) Creating an 8x8 matrix (utils/matrix.py)
+    # Pressure
+    raw_pressure_matrix = Matrix.RandomMatrix(8)
+    Matrix.PrintMatrix(raw_pressure_matrix, "Raw Pressure Matrix")
+
+    # Raw 2d pressure_matrix to PressureMatrix object
+    pressure_matrix = Matrix.ToMatrixItems(raw_pressure_matrix)
+    Matrix.PrintItems(pressure_matrix, title="Pressure Matrix Items")
+
+    # Wetness
+    raw_wetness_matrix = Matrix.RandomMatrix(8)
+    Matrix.PrintMatrix(raw_wetness_matrix, "Raw Wetness Matrix")
+
+    # Raw 2d wetness_matrix to WetnessMatrix object
+    wetness_matrix = Matrix.ToMatrixItems(raw_wetness_matrix)
+    Matrix.PrintItems(wetness_matrix, title="Wetness Matrix Items")
+
+    # 4) Creating a Record
+    record = Record()
+
+    # Record - Example Time
+    record.time_started =  datetime.now().timestamp()
+    record.time_finished = datetime.now().replace(minute=59, second=59, microsecond=696969).timestamp()
+    
+    # Record - Add other properties
+    record.ecg = ecg
+    record.gsr = gsr
+    record.pressure_matrix = pressure_matrix
+    record.wetness_matrix = wetness_matrix
+
+    # 5) Inserting record to db
+    inserted_id = context.records.insert_one(record)
+    # Uncomment to view all data of the record
+    # record.dump("to Insert")
+
+    # 6) Finding a record in db
+    print(inserted_id)
+    found_record = context.records.find_by_id(inserted_id)
+    # Uncomment to view all data of the record
+    # found_record.dump("Found")
