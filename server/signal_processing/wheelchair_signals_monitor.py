@@ -3,17 +3,18 @@ from .ecg import process_ecg
 from .gsr import process_gsr
 from .matrix_signal import Matrix_Signal
 import numpy as np
-import sys
+import sys, time, os
 
 class Wheelchair_Signals_Monitor:
     
-    def __init__(self, duration_per_compute=120e3, lag_threshold=1e3, should_plot=False):
+    def __init__(self, duration_per_compute=120e3, lag_threshold=1e3, should_record=True, should_plot=False):
         self.ecg_signal = Signal(process_ecg, duration_per_compute, lag_threshold, should_plot)
         self.gsr_signal = Signal(process_gsr, duration_per_compute, lag_threshold, should_plot)
         self.ecg_results = {}
         self.gsr_results = {}
         self.pm_matrix = Matrix_Signal()
         self.wm_matrix = Matrix_Signal()
+        self.should_record = should_record
 
     def add_point(self, signal_type, t, y):
         ecg_results = None
@@ -41,6 +42,8 @@ class Wheelchair_Signals_Monitor:
                     "pm": self.pm_matrix.matrix,
                     "wm": self.wm_matrix.matrix
                 }
+                if self.should_record:
+                    self.record()
                 self.clear()
                 return results
         return None
@@ -53,6 +56,16 @@ class Wheelchair_Signals_Monitor:
         self.pm_matrix.clear_matrix()
         self.wm_matrix.clear_matrix()
 
+    def record(self):
+        time_id = time.time()
+        dir_path = f"./records/{time_id}"
+        os.mkdir(dir_path)
+        for t, y in zip(self.ecg_signal.t_points, self.ecg_signal.y_points):
+            with open(f"{dir_path}/ecg.txt", "w") as fout:
+                fout.write(f"{t},{y}\n")
+        for t, y in zip(self.gsr_signal.t_points, self.gsr_signal.y_points):
+            with open(f"{dir_path}/gsr.txt", "w") as fout:
+                fout.write(f"{t},{y}\n")
 
 if __name__ == "__main__":
     x = Wheelchair_Signals_Monitor()

@@ -14,8 +14,8 @@ SIGNAL_SET = {"ecg", "gsr", "pm", "wm"}
 # abseil flags
 FLAGS = flags.FLAGS
 flags.DEFINE_list("log_set", "", "set of tags to log")
-flags.DEFINE_boolean("record", False, "record samples")
-flags.DEFINE_enum("mode", "inference", "[inference, data_gathering]",
+flags.DEFINE_boolean("record", True, "record samples")
+flags.DEFINE_enum("mode", "data_gathering", "[inference, data_gathering]",
                   "inference: predict using model, "
                   "data_gathering: save data to database")
 
@@ -65,9 +65,6 @@ def receive_signal(sid, data):
 def handle_data(signal_type, signal):
     current_time = get_time()
 
-    # logging
-    if FLAGS.record:
-        record_values(current_time, signal, f"./{signal_type}.samples")
     logger.log(signal_type, f"{signal_type}:{current_time},{signal}")
         
     # send signal to mobile
@@ -77,6 +74,7 @@ def handle_data(signal_type, signal):
     features = signal_monitor.add_point(signal_type=signal_type, t=current_time, y=signal)
     if features != None:
         logger.log("features", features)
+        # RECORD VALUES
         if FLAGS.mode == "inference":
             # # use model to predict
             # prediction = model.predict(features)
