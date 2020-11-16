@@ -36,9 +36,9 @@ logger = Logger()
 signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3)
 context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
 
-@sio.on("connect")
-def on_connect(sid, environ):
-    sio.emit("output-nodemcu", "2")
+# @sio.on("connect")
+# def on_connect(sid, environ):
+#     sio.emit("output-nodemcu", "2")
 
 # @sio.on("gg")
 # def pong(sid, data):
