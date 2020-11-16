@@ -16,13 +16,17 @@ def compute_values():
 
 def process_gsr(t_points, y_points, should_plot=False):
     y = noise_filter(y_points)
-    standard_deviation = np.std(y)
-    
+   
     if should_plot:
         fig, ax = plt.subplots()
         ax.plot(y)
         plt.show()
 
     return {
-        "std": standard_deviation
+        "max": np.max(y),
+        "min": np.min(y),
+        "mean": np.mean(y),
+        "median": np.median(y),
+        "std": np.std(y),
+        "variance": np.var(y)
     }

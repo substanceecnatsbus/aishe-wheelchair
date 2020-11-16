@@ -15,12 +15,12 @@ class Record():
 
   def __init__(self):
     self._id: ObjectId = None
-    self.time_started: Timestamp = None
-    self.time_finished: Timestamp = None 
+    self.time: Timestamp = None
     self.ecg: ECG = ECG()
     self.gsr: GSR = GSR()
     self.pressure_matrix: List[MatrixItem] = []
     self.wetness_matrix: List[MatrixItem] = []
+    self.discomfort_level: str = None
 
   @staticmethod
   def FromDict(**entries):

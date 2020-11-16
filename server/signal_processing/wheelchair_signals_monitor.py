@@ -2,96 +2,83 @@ from .signals import Signal
 from .ecg import process_ecg
 from .gsr import process_gsr
 from .matrix_signal import Matrix_Signal
-import numpy as np
-import sys, time, os
+import time, os
 
 class Wheelchair_Signals_Monitor:
     
-    def __init__(self, duration_per_compute=120e3, lag_threshold=1e3, should_record=True, should_plot=False):
-        self.ecg_signal = Signal(process_ecg, duration_per_compute, lag_threshold, should_plot)
-        self.gsr_signal = Signal(process_gsr, duration_per_compute, lag_threshold, should_plot)
-        self.ecg_results = {}
-        self.gsr_results = {}
-        self.pm_matrix = Matrix_Signal()
-        self.wm_matrix = Matrix_Signal()
+    def __init__(self, duration_per_compute=120e3, lag_threshold=2e3, should_record=True):
+        self.duration_per_compute = duration_per_compute
+        self.lag_threshold = lag_threshold
+        self.signals = {}
+        self.signals["ecg"] = Signal(process_ecg)
+        self.signals["gsr"] = Signal(process_gsr)
+        self.signals["pm"] = Matrix_Signal()
+        self.signals["wm"] = Matrix_Signal()
         self.should_record = should_record
+        self.features = {}
 
     def add_point(self, signal_type, t, y):
-        ecg_results = None
-        gsr_results = None
-        if signal_type == "ecg":
-            ecg_results = self.ecg_signal.add_point(t, y)
-            if ecg_results != None:
-                self.ecg_results = ecg_results
-        elif signal_type == "gsr":
-            gsr_results = self.gsr_signal.add_point(t, y)
-            if gsr_results != None:
-                self.gsr_results = gsr_results
-        elif signal_type == "pm":
-            row, column, value = y
-            self.pm_matrix.update_cell(row, column, value, t)
-        elif signal_type == "wm":
-            row, column, value = y
-            self.wm_matrix.update_cell(row, column, value, t)
-        
-        if ecg_results != None or gsr_results != None :
-            if len(self.gsr_results) > 0  and len(self.ecg_results) > 0:
-                results = {
-                    "ecg": self.ecg_results,
-                    "gsr": self.gsr_results,
-                    "pm": self.pm_matrix.matrix,
-                    "wm": self.wm_matrix.matrix
-                }
-                if self.should_record:
-                    self.record()
+        if signal_type == "ecg" or signal_type == "gsr":
+            self.signals[signal_type].add_point(t, y)
+            # start over if lag is over lag threshold
+            lag = self.signals[signal_type].get_lag()
+            if lag >= self.lag_threshold:
+                print(f"too much lag between {signal_type} signals")
                 self.clear()
-                return results
-        return None
+        else:
+            row, column, value = y
+            self.signals[signal_type].update_cell(row, column, value, t)
+        
+        # extract features when signal duration is enough
+        ecg_duration = self.signals["ecg"].get_duration()
+        if ecg_duration >= self.duration_per_compute:
+            self.compute_features()
+            return True
+        return False
+
+    def compute_features(self):
+        time_id = time.time()
+        results = {
+            "time_id": time_id,
+            "ecg": self.signals["ecg"].extract_features(),
+            "gsr": self.signals["gsr"].extract_features(),
+            "pm": self.signals["pm"].matrix,
+            "wm": self.signals["wm"].matrix
+        }
+        self.record(time_id)
+        self.clear()
+        self.features = results
+        return results
 
     def clear(self):
-        self.ecg_results = {}
-        self.gsr_results = {}
-        self.ecg_signal.clear_points()
-        self.gsr_signal.clear_points()
-        self.pm_matrix.clear_matrix()
-        self.wm_matrix.clear_matrix()
+        self.signals["ecg"].clear_points()
+        self.signals["gsr"].clear_points()
+        self.signals["pm"].clear_matrix()
+        self.signals["wm"].clear_matrix()
 
-    def record(self):
-        time_id = time.time()
+    def record(self, time_id):
         dir_path = f"./records/{time_id}"
         os.mkdir(dir_path)
-        for t, y in zip(self.ecg_signal.t_points, self.ecg_signal.y_points):
-            with open(f"{dir_path}/ecg.txt", "w") as fout:
+        with open(f"{dir_path}/ecg.txt", "w") as fout:
+            for t, y in zip(self.signals["ecg"].t_points, self.signals["ecg"].y_points):
                 fout.write(f"{t},{y}\n")
-        for t, y in zip(self.gsr_signal.t_points, self.gsr_signal.y_points):
-            with open(f"{dir_path}/gsr.txt", "w") as fout:
+        with open(f"{dir_path}/gsr.txt", "w") as fout:
+            for t, y in zip(self.signals["gsr"].t_points, self.signals["gsr"].y_points):
                 fout.write(f"{t},{y}\n")
+        print(f"{time_id}: signals recorded")
 
 if __name__ == "__main__":
-    x = Wheelchair_Signals_Monitor()
-
-    ecg_t = []
-    ecg_y = []
-    with open("../ecg.samples", "r") as ecg_in:
-        for line in ecg_in:
-            t, y = line.rstrip().split(",")
-            ecg_t.append(int(t))
-            ecg_y.append(float(y))
-            
-    gsr_t = []
-    gsr_y = []
-    with open("../gsr.samples", "r") as gsr_in:
-        for line in gsr_in:
-            t, y = line.rstrip().split(",")
-            gsr_t.append(int(t))
-            gsr_y.append(float(y))
-
-    for t, y in zip(ecg_t, ecg_y):
-        res = x.add_point("ecg", t, y)
-        if res != None:
-            print(res)
-
-    for t, y in zip(gsr_t, gsr_y):
-        res = x.add_point("gsr", t, y)
-        if res != None:
-            print(res)
+    # :DD
+    x = Wheelchair_Signals_Monitor(duration_per_compute=120e3, lag_threshold=1e3, should_record=False)
+    with open("./gsr.samples", "r") as fin_gsr:
+        for line_gsr in fin_gsr:
+            line_gsr = line_gsr.rstrip()
+            t, y = list(map(float, line_gsr.split(",")))
+            x.add_point("gsr", t, y)
+    with open("./ecg.samples", "r") as fin_ecg:
+        for line_ecg in fin_ecg:
+            line_ecg = line_ecg.rstrip()
+            t, y = list(map(int, line_ecg.split(",")))
+            z = x.add_point("ecg", t, y)
+            if z != None:
+                print(z)

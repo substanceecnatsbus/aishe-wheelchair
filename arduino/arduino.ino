@@ -43,6 +43,7 @@ void setup() {
   pinMode(READY_LED, OUTPUT);
   digitalWrite(READY_LED, LOW);
   matrix_calibration();
+  digitalWrite(READY_LED, HIGH);
 }
 
 void loop() {
@@ -54,6 +55,8 @@ void loop() {
       set_mux(j, WM_SELECT_COLUMNS);
       int pm_value = analogRead(PM_PIN) - PM_OFFSETS[i][j];
       int wm_value = analogRead(WM_PIN) - WM_OFFSETS[i][j];
+      //int pm_value = analogRead(PM_PIN);
+      //int wm_value = analogRead(WM_PIN);
       String pm_signal = "pm:" + String(i) + "," + String(j) + "," + String(pm_value) + "\n";
       String wm_signal = "wm:" + String(i) + "," + String(j) + "," + String(wm_value) + "\n";
       ack();
@@ -121,6 +124,4 @@ void matrix_calibration() {
       WM_OFFSETS[i][j] /= NUM_MATRIX_CALIBRATIONS;
     }  
   }
-  
-  digitalWrite(READY_LED, HIGH);
 }
