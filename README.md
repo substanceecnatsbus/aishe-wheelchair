@@ -17,8 +17,3 @@ $ python server --log_set [comma separated log_set enum] --record [True|False] -
 - features
 - inference
 - discomfort-level
-
-
-# TODO
-- [ ] moving average for GSR
-- [ ] normalization
