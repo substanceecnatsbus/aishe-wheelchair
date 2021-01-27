@@ -3,10 +3,12 @@ matplotlib
 scipy
 pandas
 absl-py
-python-socketio
+python-socketio==4.6.1
 eventlet
 numpyencoder
 heartpy
 pymongo
 jsonpickle
 pymongo-model
+tensorflow
+dnspython

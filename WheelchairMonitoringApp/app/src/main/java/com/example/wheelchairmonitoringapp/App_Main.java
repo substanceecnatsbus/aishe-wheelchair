@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
@@ -20,6 +21,8 @@ import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.google.android.material.tabs.TabLayout;
+
+import java.util.logging.Logger;
 
 public class App_Main extends AppCompatActivity {
 
@@ -38,7 +41,7 @@ public class App_Main extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        this.socket.connect();
+
 
         // set up graphs
         SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager(), socket);
@@ -53,7 +56,7 @@ public class App_Main extends AppCompatActivity {
         this.selected_app = b.getString(getString(R.string.selected_app_key));
         this.footer = (LinearLayout) findViewById(R.id.footer);
         createFooter();
-
+        this.socket.connect();
     }
 
     private void createFooter() {
@@ -109,11 +112,11 @@ public class App_Main extends AppCompatActivity {
         last_updated_text_view.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         this.footer.addView(last_updated_text_view);
 
-        this.socket.on("receive-inference", new Emitter.Listener() {
+        this.socket.on("output-mobile", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 // receive and parse data
-                String[] data = args[1].toString().split(",");
+                String[] data = args[0].toString().split(",");
                 final String time = data[0];
                 final String inference = data[1];
                 new Handler(Looper.getMainLooper()).post(new Runnable() {

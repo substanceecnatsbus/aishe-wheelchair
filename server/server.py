@@ -13,6 +13,10 @@ from models.MatrixItem import MatrixItem
 from models.Record import Record
 from utils.matrix import Matrix
 from datetime import datetime
+from neural_network.model import load_model
+import numpy as np
+import pandas as pd
+from datetime import datetime
 
 # CONSTANTS
 GSR_CONSTANT = 10000 # used in computing the skin conductance (10000 according to seedstudio)
@@ -20,6 +24,7 @@ EPSILON = 1e-22 # used to prevent numerical divide by zero errors
 SIGNAL_SET = {"ecg", "gsr", "pm", "wm"} # signals not in this set are discarded
 DB_PASSWORD = "RYHUNEPzmAlsE5VT"
 DB_USERNAME = "user_1"
+CLASSES = ["No Discomfort", "Mild Discomfort", "Moderate Discomfort", "Severe Discomfort"]
 
 # flags
 FLAGS = flags.FLAGS
@@ -35,15 +40,17 @@ server = socketio.WSGIApp(sio)
 logger = Logger()
 signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3)
 context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
+model = load_model(64, "./neural_network/model.hdf5")
 
-# @sio.on("connect")
-# def on_connect(sid, environ):
-#     sio.emit("output-nodemcu", "2")
+# @sio.event
+# def connect(sid, environ):
+#     print("hello")
+#     # sio.emit("output-mobile", f"22,2")
 
 # @sio.on("gg")
 # def pong(sid, data):
-#     print("hello")
-#     sio.emit("output-nodemcu", "1")
+#     print(data)
+#     sio.emit("output-mobile", f"{datetime.now()},No Discomfort")
 
 @sio.on("signal-nodemcu")
 def receive_signal(sid, data):
@@ -88,12 +95,15 @@ def handle_data(signal_type, signal):
     has_features = signal_monitor.add_point(signal_type=signal_type, t=current_time, y=signal)
     if has_features:
         if FLAGS.mode == "inference":
-            # # use model to predict
-            # prediction = model.predict(features)
-            # logger.log("inference", prediction)
-            # # send prediction to nodemcu
-            # sio.emit("output-nodemcu", f"{current_time},{prediction}")
-            pass
+            # use model to predict
+            x = preprocess_data()
+            prediction = np.argmax(model(x))
+            predicted_class = CLASSES[prediction]
+            logger.log("inference", predicted_class)
+            # send prediction to nodemcu
+            sio.emit("output-nodemcu", prediction)
+            # send prediction to mobile
+            sio.emit("output-mobile", f"{datetime.now()},{prediction}")
         elif FLAGS.mode == "data_gathering":
             # request discomfort level from the mobile app
             sio.emit("request-discomfort-level", "")
@@ -167,7 +177,73 @@ def vardump(obj, title=None):
   print(vars(obj))
   print()
 
+def preprocess_data():
+    corr_df = pd.read_csv("./neural_network/correlation.csv")
+    feature_names = list(corr_df)[2:64+2]
+
+    ecg_features = signal_monitor.features["ecg"]
+    gsr_features = signal_monitor.features["gsr"]
+    pm_features = signal_monitor.features["pm"]
+    wm_features = signal_monitor.features["wm"]
+
+    features_dict = {
+        "mean_rri":[ecg_features["Mean RRI"]],
+        "cvrr":[ecg_features["CVRR"]],
+        "sdrr":[ecg_features["SDRR"]],
+        "sdsd":[ecg_features["SDSD"]],
+        "lf":[ecg_features["LF"]],
+        "hf":[ecg_features["HF"]],
+        "ratio":[ecg_features["LHratio"]],
+        "heart_rate":[ecg_features["Heart Rate"]],
+        "mini":[gsr_features["min"]],
+        "maxi":[gsr_features["max"]],
+        "mean":[gsr_features["mean"]],
+        "median":[gsr_features["median"]],
+        "std":[gsr_features["std"]],
+        "variance":[gsr_features["variance"]]
+    }
+    for row in range(8):
+        for col in range(8):
+            features_dict[f"pressure_matrix_{row}_{col}"] = [pm_features[row][col]]
+            features_dict[f"wetness_matrix_{row}_{col}"] = [wm_features[row][col]]
+
+    features_df = pd.DataFrame(data=features_dict)
+    features_df = features_df[feature_names]
+    x = features_df.to_numpy()
+    return x
+
+def test():
+    ecg_features = {
+        "Mean RRI": 1194.6336,
+        "CVRR": 43.0046,
+        "SDRR": 513.7475,
+        "SDSD": 438.5067,
+        "LF": 769.0859,
+        "HF": 1294.4461,
+        "LHratio": 0.5941,
+        "Heart Rate": 50,
+    }
+    gsr_features = {
+        "max": 491,
+        "min": 48.2,
+        "mean": 473.993218,
+        "median": 474.65,
+        "std": 11.26413919,
+        "variance": 126.8808318
+    }
+    pm_features = [[0 for __ in range(8)] for _ in range(8)]
+    wm_features = [[0 for __ in range(8)] for _ in range(8)]
+
+    signal_monitor.features["ecg"] = ecg_features
+    signal_monitor.features["gsr"] = gsr_features
+    signal_monitor.features["pm"] = pm_features
+    signal_monitor.features["wm"] = wm_features
+    x = preprocess_data()
+    res = model(x)
+    print(CLASSES[np.argmax(res)])
+
 if __name__ == "__main__":
+    # test()
     app.run(main)
 
     # ------------------------------- DB SAMPLE CODE ------------------------------------------------

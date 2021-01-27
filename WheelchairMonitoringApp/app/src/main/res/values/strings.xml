@@ -5,7 +5,7 @@
         <item>Data Gathering</item>
     </string-array>
     <string name="selected_app_key">selected_app</string>
-    <string name="server_address">http://192.168.0.14:3000</string>
+    <string name="server_address">http://192.168.0.29:3000</string>
 
     <string name="ecg_tab">ECG</string>
     <string name="gsr_tab">GSR</string>
