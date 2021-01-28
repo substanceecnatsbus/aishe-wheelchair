@@ -42,11 +42,19 @@ def generate_dataset(num_features, split=None):
         return ((x_train, y_train), (x_test, y_test))
 
 if __name__ == "__main__":
-    num_features = 64
+    num_features = 111
+
+    # train
+    # (x_train, y_train), (x_test, y_test) = generate_dataset(num_features, 0.9)
+    # model = load_model(num_features)
+    # model.fit(x_train, y_train, epochs=10)
+    # model.save("./neural_network/model.hdf5")
+    # model.evaluate(x_test, y_test)
+    # print(np.argmax(model(np.expand_dims(x_train[0], axis=0))), y_train[0])
+    
+    # test
     x, y = generate_dataset(num_features)
     model = load_model(num_features, "./neural_network/model.hdf5")
     model.evaluate(x, y)
-    # model.fit(x_train, y_train, epochs=10)
-    # model.save("./models/model.hdf5")
-    # model.evaluate(x_test, y_test)
-    # print(np.argmax(model(np.expand_dims(x_train[0], axis=0))), y_train[0])
+
+

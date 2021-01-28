@@ -116,7 +116,7 @@ public class App_Main extends AppCompatActivity {
             @Override
             public void call(Object... args) {
                 // receive and parse data
-                String[] data = args[0].toString().split(",");
+                String[] data = args[1].toString().split(",");
                 final String time = data[0];
                 final String inference = data[1];
                 new Handler(Looper.getMainLooper()).post(new Runnable() {

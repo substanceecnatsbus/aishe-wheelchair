@@ -25,6 +25,7 @@ SIGNAL_SET = {"ecg", "gsr", "pm", "wm"} # signals not in this set are discarded
 DB_PASSWORD = "RYHUNEPzmAlsE5VT"
 DB_USERNAME = "user_1"
 CLASSES = ["No Discomfort", "Mild Discomfort", "Moderate Discomfort", "Severe Discomfort"]
+NUM_FEATURES = 111
 
 # flags
 FLAGS = flags.FLAGS
@@ -39,13 +40,13 @@ sio = socketio.Server(cors_allowed_origins="*")
 server = socketio.WSGIApp(sio)
 logger = Logger()
 signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3)
-context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
-model = load_model(64, "./neural_network/model.hdf5")
+# context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
+model = load_model(NUM_FEATURES, "./neural_network/model.hdf5")
 
-# @sio.event
-# def connect(sid, environ):
-#     print("hello")
-#     # sio.emit("output-mobile", f"22,2")
+@sio.event
+def connect(sid, environ):
+    print("hello")
+    sio.emit("output-mobile", f"{datetime.now()},No Discomfort")
 
 # @sio.on("gg")
 # def pong(sid, data):
@@ -179,7 +180,7 @@ def vardump(obj, title=None):
 
 def preprocess_data():
     corr_df = pd.read_csv("./neural_network/correlation.csv")
-    feature_names = list(corr_df)[2:64+2]
+    feature_names = list(corr_df)[2:NUM_FEATURES+2]
 
     ecg_features = signal_monitor.features["ecg"]
     gsr_features = signal_monitor.features["gsr"]
