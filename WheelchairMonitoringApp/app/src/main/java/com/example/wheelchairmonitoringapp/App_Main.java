@@ -2,6 +2,8 @@ package com.example.wheelchairmonitoringapp;
 
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,6 +15,7 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.viewpager.widget.ViewPager;
 
 import com.example.wheelchairmonitoringapp.ui.main.SectionsPagerAdapter;
@@ -21,6 +24,7 @@ import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.google.android.material.tabs.TabLayout;
+import static android.Manifest.permission.CALL_PHONE;
 
 import java.util.logging.Logger;
 
@@ -125,6 +129,14 @@ public class App_Main extends AppCompatActivity {
                         // update fields
                         last_updated_text_view.setText(time);
                         discomfort_level_text_view.setText(inference);
+                        if (inference.equals("Severe Discomfort")) {
+                            Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + getResources().getString(R.string.phone_number)));
+                            if (ContextCompat.checkSelfPermission(getApplicationContext(), CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                                startActivity(intent);
+                            } else {
+                                requestPermissions(new String[]{CALL_PHONE}, 1);
+                            }
+                        }
                     }
                 });
             }

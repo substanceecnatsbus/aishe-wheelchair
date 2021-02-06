@@ -40,13 +40,13 @@ sio = socketio.Server(cors_allowed_origins="*")
 server = socketio.WSGIApp(sio)
 logger = Logger()
 signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3)
-# context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
+context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
 model = load_model(NUM_FEATURES, "./neural_network/model.hdf5")
 
-@sio.event
-def connect(sid, environ):
-    print("hello")
-    sio.emit("output-mobile", f"{datetime.now()},No Discomfort")
+# @sio.event
+# def connect(sid, environ):    
+#     print("hello")
+#     sio.emit("output-mobile", f"{datetime.now()},Severe Discomfort")
 
 # @sio.on("gg")
 # def pong(sid, data):
@@ -102,9 +102,9 @@ def handle_data(signal_type, signal):
             predicted_class = CLASSES[prediction]
             logger.log("inference", predicted_class)
             # send prediction to nodemcu
-            sio.emit("output-nodemcu", prediction)
+            sio.emit("output-nodemcu", f"{prediction}")
             # send prediction to mobile
-            sio.emit("output-mobile", f"{datetime.now()},{prediction}")
+            sio.emit("output-mobile", f"{datetime.now()},{predicted_class}")
         elif FLAGS.mode == "data_gathering":
             # request discomfort level from the mobile app
             sio.emit("request-discomfort-level", "")

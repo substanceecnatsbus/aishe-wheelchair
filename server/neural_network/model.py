@@ -23,28 +23,36 @@ def load_model(num_features, model_path=None):
     return model
 
 # TODO: normalize
-def generate_dataset(num_features, split=None):
+def generate_dataset(num_features, split=None, one_hot=True):
     corr_df = pd.read_csv("./neural_network/correlation.csv")
     feature_names = list(corr_df)[1:num_features+2]
     features_df = pd.read_csv("./neural_network/records.csv")
     features_df = features_df[feature_names]
     if split == None:
         x_train = features_df.drop("discomfort_level", 1).to_numpy()
-        y_train = tf.one_hot(features_df["discomfort_level"].to_numpy(), 4)
+        if one_hot:
+            y_train = tf.one_hot(features_df["discomfort_level"].to_numpy(), 4)
+        else:
+            y_train = features_df["discomfort_level"].to_numpy()
         return x_train, y_train
     else:
         train_set = features_df.sample(frac=split)
         test_set = features_df.drop(train_set.index)
         x_train = train_set.drop("discomfort_level", 1).to_numpy()
-        y_train = tf.one_hot(train_set["discomfort_level"].to_numpy(), 4)
         x_test = test_set.drop("discomfort_level", 1).to_numpy()
-        y_test = tf.one_hot(test_set["discomfort_level"].to_numpy(), 4)
+        if one_hot:
+            y_train = tf.one_hot(train_set["discomfort_level"].to_numpy(), 4)
+            y_test = tf.one_hot(test_set["discomfort_level"].to_numpy(), 4)
+        else:
+            y_train = features_df["discomfort_level"].to_numpy()
+            y_test = test_set["discomfort_level"].to_numpy()
         return ((x_train, y_train), (x_test, y_test))
 
 if __name__ == "__main__":
-    num_features = 111
+    pass
+    # num_features = 111
 
-    # train
+    # # train
     # (x_train, y_train), (x_test, y_test) = generate_dataset(num_features, 0.9)
     # model = load_model(num_features)
     # model.fit(x_train, y_train, epochs=10)
@@ -52,9 +60,13 @@ if __name__ == "__main__":
     # model.evaluate(x_test, y_test)
     # print(np.argmax(model(np.expand_dims(x_train[0], axis=0))), y_train[0])
     
-    # test
-    x, y = generate_dataset(num_features)
-    model = load_model(num_features, "./neural_network/model.hdf5")
-    model.evaluate(x, y)
+    # # confusion matrix
+    # x, y = generate_dataset(num_features, one_hot=False)
+    # model = load_model(num_features, "./neural_network/model.hdf5")
+    # predictions = model(x)
+    # predictions = np.argmax(predictions, 1)
+    # print(tf.math.confusion_matrix(y, predictions))
+
+
 
 

@@ -68,11 +68,10 @@ def get_correlation_matrix(input_path, output_path):
     corr_df.to_csv(output_path)
     
 if __name__ == "__main__":
-    import sys
-    records_path = sys.argv[1]
-    corr_path = sys.argv[2]
-    get_records(records_path)
-    get_correlation_matrix(records_path, corr_path)
-    df = pd.read_csv(corr_path)
-    for i, feature in enumerate(list(df)[2:]):
-        print(i+1, feature)
+    get_records("neural_network/records.csv")
+    get_correlation_matrix("neural_network/records.csv", "neural_network/correlation.csv")
+
+
+    #     import sys
+    # records_path = sys.argv[1]
+    # corr_path = sys.argv[2]
