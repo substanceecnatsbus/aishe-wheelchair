@@ -183,6 +183,12 @@ def process_ecg(t, y, should_plot=False):
     parameters = getParameters(ecgTimes[peaks], peaks, rows, fs)
     return parameters
 
+def ecg_filter(t, y):
+    rawTimes, rawValues, rawRows, rawCols, rawDuration, rawFs = readRawData(t, y)
+    ecgTimes, ecgValues, rows, duration, fs = interpolateRawSignal(rawTimes, rawValues, rawRows, rawDuration)
+    filteredValues = filterEcgSignal(ecgValues, fs)
+    return filteredValues
+
 if __name__ == "__main__":
     path = sys.argv[1]
     t_points = []
