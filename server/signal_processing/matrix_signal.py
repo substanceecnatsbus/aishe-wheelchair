@@ -1,10 +1,16 @@
 class Matrix_Signal:
 
-    def __init__(self):
+    def __init__(self, threshold=0):
         self.clear_matrix()
+        self.threshold = threshold
 
     def update_cell(self, row, column, value, time):
         self.matrix[row][column] = value
+        count += 1
+        if count >= 64:
+            count = 0
+            return get_average() >= self.threshold
+        return True
         # # use running average
         # previous_value = self.matrix[row][column]
         # if previous_value == 0:
@@ -12,5 +18,13 @@ class Matrix_Signal:
         # else:
         #     self.matrix[row][column] = (self.matrix[row][column] + value) / 2
 
+    def get_average(self):
+        sum = 0
+        for i in range(8):
+            for j in range(8):
+                sum += self.matrix[i][j]
+        return sum / 64
+
     def clear_matrix(self):
         self.matrix = [[0 for __ in range(8)] for _ in range(8)]
+        self.count = 0

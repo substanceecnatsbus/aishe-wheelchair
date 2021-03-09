@@ -6,13 +6,13 @@ import time, os
 
 class Wheelchair_Signals_Monitor:
     
-    def __init__(self, duration_per_compute=120e3, lag_threshold=2e3, should_record=True):
+    def __init__(self, duration_per_compute=120e3, lag_threshold=2e3, should_record=True, pressure_threshold=0):
         self.duration_per_compute = duration_per_compute
         self.lag_threshold = lag_threshold
         self.signals = {}
         self.signals["ecg"] = Signal(process_ecg)
         self.signals["gsr"] = Signal(process_gsr)
-        self.signals["pm"] = Matrix_Signal()
+        self.signals["pm"] = Matrix_Signall(threshold=threshold)
         self.signals["wm"] = Matrix_Signal()
         self.should_record = should_record
         self.features = {}
@@ -27,14 +27,17 @@ class Wheelchair_Signals_Monitor:
                 self.clear()
         else:
             row, column, value = y
-            self.signals[signal_type].update_cell(row, column, value, t)
+            if not self.signals[signal_type].update_cell(row, column, value, t):
+                # no user detected
+                self.clear()
+                return 2
         
         # extract features when signal duration is enough
         ecg_duration = self.signals["ecg"].get_duration()
         if ecg_duration >= self.duration_per_compute:
             self.compute_features()
-            return True
-        return False
+            return 1
+        return 0
 
     def compute_features(self):
         time_id = time.time()

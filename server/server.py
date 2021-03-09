@@ -26,6 +26,7 @@ DB_PASSWORD = "RYHUNEPzmAlsE5VT"
 DB_USERNAME = "user_1"
 CLASSES = ["No Discomfort", "Mild Discomfort", "Moderate Discomfort", "Severe Discomfort"]
 NUM_FEATURES = 111
+PRESSURE_THRESHOLD = 100
 
 # flags
 FLAGS = flags.FLAGS
@@ -39,7 +40,7 @@ flags.DEFINE_enum("mode", "data_gathering", "[inference, data_gathering]",
 sio = socketio.Server(cors_allowed_origins="*")
 server = socketio.WSGIApp(sio)
 logger = Logger()
-signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3)
+signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3, threshold=PRESSURE_THRESHOLD)
 context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
 model = load_model(NUM_FEATURES, "./neural_network/model.hdf5")
 
@@ -94,7 +95,7 @@ def handle_data(signal_type, signal):
 
     # send the signal to the signal monitor
     has_features = signal_monitor.add_point(signal_type=signal_type, t=current_time, y=signal)
-    if has_features:
+    if has_features == 1:
         if FLAGS.mode == "inference":
             # use model to predict
             x = preprocess_data()
@@ -108,6 +109,9 @@ def handle_data(signal_type, signal):
         elif FLAGS.mode == "data_gathering":
             # request discomfort level from the mobile app
             sio.emit("request-discomfort-level", "")
+    elif has_features == 2:
+        # no user detected
+        logger.log("user_detected", "no user detected")
 
 
 @sio.on("discomfort-level")
