@@ -27,7 +27,11 @@ class Wheelchair_Signals_Monitor:
                 self.clear()
         else:
             row, column, value = y
-            if not self.signals[signal_type].update_cell(row, column, value, t):
+            matrix_res = self.signals[signal_type].update_cell(row, column, value, t)
+            if matrix_res == 1:
+                # user detected
+                return 3
+            elif matrix_res == 2:
                 # no user detected
                 self.clear()
                 return 2
@@ -36,7 +40,9 @@ class Wheelchair_Signals_Monitor:
         ecg_duration = self.signals["ecg"].get_duration()
         if ecg_duration >= self.duration_per_compute:
             self.compute_features()
+            # do inference/data gathering
             return 1
+        # do nothing
         return 0
 
     def compute_features(self):

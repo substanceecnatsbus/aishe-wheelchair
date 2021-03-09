@@ -9,8 +9,9 @@ class Matrix_Signal:
         count += 1
         if count >= 64:
             count = 0
-            return get_average() >= self.threshold
-        return True
+            if get_average() >= self.threshold: return 1
+            else: return 2
+        else: return 0
         # # use running average
         # previous_value = self.matrix[row][column]
         # if previous_value == 0:

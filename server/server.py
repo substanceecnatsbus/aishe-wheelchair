@@ -114,7 +114,7 @@ def handle_data(signal_type, signal):
         # no user detected
         logger.log("user_detected", "no user detected")
         sio.emit("no-user-detected", f"{datetime.now()},Severe Discomfort")
-    else: sio.emit("user-detected", "user detected")
+    elif has_features == 3: sio.emit("user-detected", "user detected")
 
 
 @sio.on("discomfort-level")
