@@ -33,6 +33,7 @@ public class App_Main extends AppCompatActivity {
     private Socket socket;
     private LinearLayout footer;
     private String selected_app;
+    private TextView user_detected_text_view;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +56,7 @@ public class App_Main extends AppCompatActivity {
         tabs.setupWithViewPager(viewPager);
 
         // set up footer
+        this.user_detected_text_view = new TextView((this));
         Intent intent = getIntent();
         Bundle b = intent.getExtras();
         this.selected_app = b.getString(getString(R.string.selected_app_key));
@@ -64,6 +66,31 @@ public class App_Main extends AppCompatActivity {
     }
 
     private void createFooter() {
+        user_detected_text_view.setText("User Detected");
+        user_detected_text_view.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        this.socket.on("no-user-detected", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        user_detected_text_view.setText("No User Detected");
+                    }
+                });
+            }
+        });
+        this.socket.on("user-detected", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        user_detected_text_view.setText("User Detected");
+                    }
+                });
+            }
+        });
+        this.footer.addView(user_detected_text_view);
         String[] app_select_options = getResources().getStringArray(R.array.app_select);
         if (selected_app.equals(app_select_options[0])) {
             footer_inference();

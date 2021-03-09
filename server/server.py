@@ -40,14 +40,14 @@ flags.DEFINE_enum("mode", "data_gathering", "[inference, data_gathering]",
 sio = socketio.Server(cors_allowed_origins="*")
 server = socketio.WSGIApp(sio)
 logger = Logger()
-signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3, threshold=PRESSURE_THRESHOLD)
+signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3, pressure_threshold=PRESSURE_THRESHOLD)
 context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
 model = load_model(NUM_FEATURES, "./neural_network/model.hdf5")
 
 # @sio.event
 # def connect(sid, environ):    
 #     print("hello")
-#     sio.emit("output-mobile", f"{datetime.now()},Severe Discomfort")
+#     sio.emit("no-user-detected", "no user detected")
 
 # @sio.on("gg")
 # def pong(sid, data):
@@ -109,9 +109,12 @@ def handle_data(signal_type, signal):
         elif FLAGS.mode == "data_gathering":
             # request discomfort level from the mobile app
             sio.emit("request-discomfort-level", "")
+        sio.emit("user-detected", "user detected")
     elif has_features == 2:
         # no user detected
         logger.log("user_detected", "no user detected")
+        sio.emit("no-user-detected", f"{datetime.now()},Severe Discomfort")
+    else: sio.emit("user-detected", "user detected")
 
 
 @sio.on("discomfort-level")

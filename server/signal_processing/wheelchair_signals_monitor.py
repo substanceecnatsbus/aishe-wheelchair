@@ -12,7 +12,7 @@ class Wheelchair_Signals_Monitor:
         self.signals = {}
         self.signals["ecg"] = Signal(process_ecg)
         self.signals["gsr"] = Signal(process_gsr)
-        self.signals["pm"] = Matrix_Signall(threshold=threshold)
+        self.signals["pm"] = Matrix_Signal(threshold=pressure_threshold)
         self.signals["wm"] = Matrix_Signal()
         self.should_record = should_record
         self.features = {}

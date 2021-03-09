@@ -41,6 +41,23 @@ public class Matrix_Fragment extends Fragment {
         this.name = name;
     }
 
+    private void create_table(@NonNull View view) {
+        TableLayout table_layout = (TableLayout)view.findViewById(R.id.table_layout);
+        for (int row = 0; row < 8; row++) {
+            TableRow table_row = new TableRow(this.context);
+            for (int column = 0; column < 8; column++) {
+                TextView text_view = new TextView(this.context);
+                int id = Integer.parseInt("69" + Integer.toString(row) + Integer.toString(column));
+                text_view.setId(id);
+                text_view.setText("0");
+                text_view.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                text_view.setBackground(this.context.getDrawable(R.drawable.border));
+                table_row.addView(text_view);
+            }
+            table_layout.addView(table_row);
+        }
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,19 +95,6 @@ public class Matrix_Fragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        TableLayout table_layout = (TableLayout)view.findViewById(R.id.table_layout);
-        for (int row = 0; row < 8; row++) {
-            TableRow table_row = new TableRow(this.context);
-            for (int column = 0; column < 8; column++) {
-                TextView text_view = new TextView(this.context);
-                int id = Integer.parseInt("69" + Integer.toString(row) + Integer.toString(column));
-                text_view.setId(id);
-                text_view.setText("0");
-                text_view.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                text_view.setBackground(this.context.getDrawable(R.drawable.border));
-                table_row.addView(text_view);
-            }
-            table_layout.addView(table_row);
-        }
+        create_table(view);
     }
 }
