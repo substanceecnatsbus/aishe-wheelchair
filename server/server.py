@@ -26,7 +26,7 @@ DB_PASSWORD = "RYHUNEPzmAlsE5VT"
 DB_USERNAME = "user_1"
 CLASSES = ["No Discomfort", "Mild Discomfort", "Moderate Discomfort", "Severe Discomfort"]
 NUM_FEATURES = 111
-PRESSURE_THRESHOLD = 12
+PRESSURE_THRESHOLD = 16 
 WETNESS_THRESHOLD = 70
 
 # flags
