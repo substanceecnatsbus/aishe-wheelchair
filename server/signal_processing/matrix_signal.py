@@ -11,7 +11,7 @@ class Matrix_Signal:
         if self.count >= 64:
             self.count = 0
             print(f"{self.name} average: {self.get_average()}")
-            if get_average() >= self.threshold: return 1
+            if self.get_average() >= self.threshold: return 1
             else: return 2
         else: return 0
         # # use running average
