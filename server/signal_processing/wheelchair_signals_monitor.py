@@ -6,14 +6,14 @@ import time, os
 
 class Wheelchair_Signals_Monitor:
     
-    def __init__(self, duration_per_compute=120e3, lag_threshold=2e3, should_record=True, pressure_threshold=0):
+    def __init__(self, duration_per_compute=120e3, lag_threshold=2e3, should_record=True, pressure_threshold=0, wetness_threshold=0):
         self.duration_per_compute = duration_per_compute
         self.lag_threshold = lag_threshold
         self.signals = {}
         self.signals["ecg"] = Signal(process_ecg)
         self.signals["gsr"] = Signal(process_gsr)
         self.signals["pm"] = Matrix_Signal("Pressure Matrix", threshold=pressure_threshold)
-        self.signals["wm"] = Matrix_Signal("Wetness Matrix")
+        self.signals["wm"] = Matrix_Signal("Wetness Matrix", threshold=wetness_threshold)
         self.should_record = should_record
         self.features = {}
 

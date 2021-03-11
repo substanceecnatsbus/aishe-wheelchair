@@ -26,7 +26,8 @@ DB_PASSWORD = "RYHUNEPzmAlsE5VT"
 DB_USERNAME = "user_1"
 CLASSES = ["No Discomfort", "Mild Discomfort", "Moderate Discomfort", "Severe Discomfort"]
 NUM_FEATURES = 111
-PRESSURE_THRESHOLD = 100
+PRESSURE_THRESHOLD = 12
+WETNESS_THRESHOLD = 70
 
 # flags
 FLAGS = flags.FLAGS
@@ -40,7 +41,7 @@ flags.DEFINE_enum("mode", "data_gathering", "[inference, data_gathering]",
 sio = socketio.Server(cors_allowed_origins="*")
 server = socketio.WSGIApp(sio)
 logger = Logger()
-signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3, pressure_threshold=PRESSURE_THRESHOLD)
+signal_monitor = Wheelchair_Signals_Monitor(duration_per_compute=120e3, pressure_threshold=PRESSURE_THRESHOLD, wetness_threshold=WETNESS_THRESHOLD)
 context = DbContext(DB_USERNAME, "wheelchairDB", DB_PASSWORD)
 model = load_model(NUM_FEATURES, "./neural_network/model.hdf5")
 
