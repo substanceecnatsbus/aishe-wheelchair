@@ -7,9 +7,9 @@ class Matrix_Signal:
 
     def update_cell(self, row, column, value, time):
         self.matrix[row][column] = value
-        count += 1
-        if count >= 64:
-            count = 0
+        self.count += 1
+        if self.count >= 64:
+            self.count = 0
             print(f"{self.name} average: {self.get_average()}")
             if get_average() >= self.threshold: return 1
             else: return 2
