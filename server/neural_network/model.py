@@ -7,10 +7,11 @@ def load_model(num_features, model_path=None):
     if model_path == None:
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(num_features, )),
-            tf.keras.layers.Dense(128, activation=tf.keras.activations.relu),
-            tf.keras.layers.Dense(256, activation=tf.keras.activations.relu),
-            tf.keras.layers.Dense(128, activation=tf.keras.activations.relu),
-            tf.keras.layers.Dense(64, activation=tf.keras.activations.relu),
+            tf.keras.layers.Dense(128, activation=tf.keras.activations.relu, kernel_regularizer=tf.keras.regularizers.L2(0.03)),
+            tf.keras.layers.Dense(256, activation=tf.keras.activations.relu, kernel_regularizer=tf.keras.regularizers.L2(0.03)),
+            tf.keras.layers.Dense(512, activation=tf.keras.activations.relu, kernel_regularizer=tf.keras.regularizers.L2(0.03)),
+            tf.keras.layers.Dense(256, activation=tf.keras.activations.relu, kernel_regularizer=tf.keras.regularizers.L2(0.03)),
+            tf.keras.layers.Dense(128, activation=tf.keras.activations.relu, kernel_regularizer=tf.keras.regularizers.L2(0.03)),
             tf.keras.layers.Dense(4, activation=tf.keras.activations.softmax)
         ])
         model.compile(
@@ -27,6 +28,7 @@ def generate_dataset(num_features, split=None, one_hot=True):
     corr_df = pd.read_csv("./neural_network/correlation.csv")
     feature_names = list(corr_df)[1:num_features+2]
     features_df = pd.read_csv("./neural_network/records.csv")
+    features_df = features_df.sample(frac=1, axis=1)
     features_df = features_df[feature_names]
     if split == None:
         x_train = features_df.drop("discomfort_level", 1).to_numpy()
@@ -49,16 +51,22 @@ def generate_dataset(num_features, split=None, one_hot=True):
         return ((x_train, y_train), (x_test, y_test))
 
 if __name__ == "__main__":
-    pass
-    # num_features = 111
+    num_features = 111
 
-    # # train
-    # (x_train, y_train), (x_test, y_test) = generate_dataset(num_features, 0.9)
-    # model = load_model(num_features)
-    # model.fit(x_train, y_train, epochs=10)
-    # model.save("./neural_network/model.hdf5")
-    # model.evaluate(x_test, y_test)
-    # print(np.argmax(model(np.expand_dims(x_train[0], axis=0))), y_train[0])
+    # train
+    x_train, y_train = generate_dataset(num_features)
+    model = load_model(num_features)
+    model.fit(
+        x_train, 
+        y_train,
+        batch_size=4,
+        epochs=5000,
+        callbacks = [
+            tf.keras.callbacks.ReduceLROnPlateau(monitor="loss", verbose=1, patience=8)    
+        ]
+    )
+    model.save("./neural_network/model.hdf5")
+    print(np.argmax(model(np.expand_dims(x_train[0], axis=0))), y_train[0])
     
     # # confusion matrix
     # x, y = generate_dataset(num_features, one_hot=False)
